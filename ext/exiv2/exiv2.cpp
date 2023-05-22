@@ -144,6 +144,7 @@ static VALUE image_write_metadata(VALUE self);
 static VALUE image_iptc_data(VALUE self);
 static VALUE image_xmp_data(VALUE self);
 static VALUE image_exif_data(VALUE self);
+static VALUE image_copy_to_image(VALUE self, VALUE other);
 
 static VALUE image_factory_class;
 static VALUE image_factory_open(VALUE klass, VALUE path);
@@ -177,6 +178,7 @@ extern "C" void Init_exiv2() {
   rb_define_method(image_class, "iptc_data", (Method)image_iptc_data, 0);
   rb_define_method(image_class, "xmp_data", (Method)image_xmp_data, 0);
   rb_define_method(image_class, "exif_data", (Method)image_exif_data, 0);
+  rb_define_method(image_class, "copy_to_image", (Method)image_copy_to_image, 1);
 
   image_factory_class = rb_define_class_under(exiv2_module, "ImageFactory", rb_cObject);
   rb_define_singleton_method(image_factory_class, "open", (Method)image_factory_open, 1);
@@ -268,6 +270,18 @@ static VALUE image_xmp_data(VALUE self) {
 
   return xmp_data;
 }
+
+static VALUE image_copy_to_image(VALUE self, VALUE other) {
+  Exiv2::Image *image, *other_image;
+  Data_Get_Struct(self,  Exiv2::Image, image);
+  Data_Get_Struct(other, Exiv2::Image, other_image);
+
+  const Exiv2::Image &image_ref = *image;
+  other_image->setMetadata(image_ref);
+
+  return Qtrue;
+}
+
 // Exiv2::ImageFactory methods
 
 static VALUE image_factory_open(VALUE klass, VALUE path) {
