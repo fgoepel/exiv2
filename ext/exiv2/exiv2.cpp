@@ -145,6 +145,7 @@ static VALUE image_iptc_data(VALUE self);
 static VALUE image_xmp_data(VALUE self);
 static VALUE image_exif_data(VALUE self);
 static VALUE image_copy_to_image(VALUE self, VALUE other);
+static VALUE image_clear(VALUE self);
 
 static VALUE image_factory_class;
 static VALUE image_factory_open(VALUE klass, VALUE path);
@@ -153,16 +154,19 @@ static VALUE exif_data_class;
 static VALUE exif_data_each(VALUE self);
 static VALUE exif_data_add(VALUE self, VALUE key, VALUE value);
 static VALUE exif_data_delete(VALUE self, VALUE key);
+static VALUE exif_data_clear(VALUE self);
 
 static VALUE iptc_data_class;
 static VALUE iptc_data_each(VALUE self);
 static VALUE iptc_data_add(VALUE self, VALUE key, VALUE value);
 static VALUE iptc_data_delete(VALUE self, VALUE key);
+static VALUE iptc_data_clear(VALUE self);
 
 static VALUE xmp_data_class;
 static VALUE xmp_data_each(VALUE self);
 static VALUE xmp_data_add(VALUE self, VALUE key, VALUE value);
 static VALUE xmp_data_delete(VALUE self, VALUE key);
+static VALUE xmp_data_clear(VALUE self);
 
 extern "C" void Init_exiv2() {
   VALUE enumerable_module = rb_const_get(rb_cObject, rb_intern("Enumerable"));
@@ -179,6 +183,7 @@ extern "C" void Init_exiv2() {
   rb_define_method(image_class, "xmp_data", (Method)image_xmp_data, 0);
   rb_define_method(image_class, "exif_data", (Method)image_exif_data, 0);
   rb_define_method(image_class, "copy_to_image", (Method)image_copy_to_image, 1);
+  rb_define_method(image_class, "clear", (Method)image_clear, 0);
 
   image_factory_class = rb_define_class_under(exiv2_module, "ImageFactory", rb_cObject);
   rb_define_singleton_method(image_factory_class, "open", (Method)image_factory_open, 1);
@@ -189,6 +194,7 @@ extern "C" void Init_exiv2() {
   rb_define_method(exif_data_class, "each", (Method)exif_data_each, 0);
   rb_define_method(exif_data_class, "add", (Method)exif_data_add, 2);
   rb_define_method(exif_data_class, "delete", (Method)exif_data_delete, 1);
+  rb_define_method(exif_data_class, "clear", (Method)exif_data_clear, 0);
 
   iptc_data_class = rb_define_class_under(exiv2_module, "IptcData", rb_cObject);
   rb_undef_alloc_func(iptc_data_class);
@@ -196,13 +202,15 @@ extern "C" void Init_exiv2() {
   rb_define_method(iptc_data_class, "each", (Method)iptc_data_each, 0);
   rb_define_method(iptc_data_class, "add", (Method)iptc_data_add, 2);
   rb_define_method(iptc_data_class, "delete", (Method)iptc_data_delete, 1);
-  
+  rb_define_method(iptc_data_class, "clear", (Method)iptc_data_clear, 0);
+
   xmp_data_class = rb_define_class_under(exiv2_module, "XmpData", rb_cObject);
   rb_undef_alloc_func(xmp_data_class);
   rb_include_module(xmp_data_class, enumerable_module);
   rb_define_method(xmp_data_class, "each", (Method)xmp_data_each, 0);
   rb_define_method(xmp_data_class, "add", (Method)xmp_data_add, 2);
   rb_define_method(xmp_data_class, "delete", (Method)xmp_data_delete, 1);
+  rb_define_method(xmp_data_class, "clear", (Method)xmp_data_clear, 0);
 }
 
 
@@ -282,6 +290,17 @@ static VALUE image_copy_to_image(VALUE self, VALUE other) {
   return Qtrue;
 }
 
+static VALUE image_clear(VALUE self) {
+  Exiv2::Image* image;
+  Data_Get_Struct(self, Exiv2::Image, image);
+
+  image->exifData().clear();
+  image->iptcData().clear();
+  image->xmpData().clear();
+
+  return Qtrue;
+}
+
 // Exiv2::ImageFactory methods
 
 static VALUE image_factory_open(VALUE klass, VALUE path) {
@@ -334,6 +353,15 @@ static VALUE exif_data_delete(VALUE self, VALUE key) {
   data->erase(pos);
 
   return Qtrue;
+}
+
+static VALUE exif_data_clear(VALUE self) {
+  Exiv2::ExifData* data;
+  Data_Get_Struct(self, Exiv2::ExifData, data);
+
+  data->clear();
+
+  return Qnil;
 }
 
 
@@ -414,7 +442,16 @@ static VALUE iptc_data_delete(VALUE self, VALUE key) {
 
   return Qtrue;
 }
- 
+
+static VALUE iptc_data_clear(VALUE self) {
+  Exiv2::IptcData* data;
+  Data_Get_Struct(self, Exiv2::IptcData, data);
+
+  data->clear();
+
+  return Qnil;
+}
+
 // Exiv2::XmpData methods
 
 static VALUE xmp_data_each(VALUE self) {
@@ -440,4 +477,13 @@ static VALUE xmp_data_delete(VALUE self, VALUE key) {
   data->erase(pos);
 
   return Qtrue;
+}
+
+static VALUE xmp_data_clear(VALUE self) {
+  Exiv2::XmpData* data;
+  Data_Get_Struct(self, Exiv2::XmpData, data);
+
+  data->clear();
+
+  return Qnil;
 }
