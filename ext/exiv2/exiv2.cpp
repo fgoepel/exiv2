@@ -146,6 +146,7 @@ static VALUE image_xmp_data(VALUE self);
 static VALUE image_exif_data(VALUE self);
 static VALUE image_copy_to_image(VALUE self, VALUE other);
 static VALUE image_clear(VALUE self);
+static VALUE image_set_xmp_packet(VALUE self, VALUE xmp_packet);
 
 static VALUE image_factory_class;
 static VALUE image_factory_open(VALUE klass, VALUE path);
@@ -184,6 +185,7 @@ extern "C" void Init_exiv2() {
   rb_define_method(image_class, "exif_data", (Method)image_exif_data, 0);
   rb_define_method(image_class, "copy_to_image", (Method)image_copy_to_image, 1);
   rb_define_method(image_class, "clear", (Method)image_clear, 0);
+  rb_define_method(image_class, "set_xmp_packet", (Method)image_set_xmp_packet, 1);
 
   image_factory_class = rb_define_class_under(exiv2_module, "ImageFactory", rb_cObject);
   rb_define_singleton_method(image_factory_class, "open", (Method)image_factory_open, 1);
@@ -297,6 +299,15 @@ static VALUE image_clear(VALUE self) {
   image->exifData().clear();
   image->iptcData().clear();
   image->xmpData().clear();
+
+  return Qtrue;
+}
+
+static VALUE image_set_xmp_packet(VALUE self, VALUE xmp_packet) {
+  Exiv2::Image* image;
+  Data_Get_Struct(self, Exiv2::Image, image);
+
+  image->setXmpPacket(to_std_string(xmp_packet));
 
   return Qtrue;
 }
