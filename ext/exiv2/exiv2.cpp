@@ -147,6 +147,9 @@ static VALUE image_exif_data(VALUE self);
 static VALUE image_copy_to_image(VALUE self, VALUE other);
 static VALUE image_clear(VALUE self);
 static VALUE image_set_xmp_packet(VALUE self, VALUE xmp_packet);
+static VALUE image_set_icc_profile(VALUE self, VALUE icc_profile);
+static VALUE image_clear_icc_profile(VALUE self);
+static VALUE image_has_icc_profile(VALUE self);
 
 static VALUE image_factory_class;
 static VALUE image_factory_open(VALUE klass, VALUE path);
@@ -186,6 +189,9 @@ extern "C" void Init_exiv2() {
   rb_define_method(image_class, "copy_to_image", (Method)image_copy_to_image, 1);
   rb_define_method(image_class, "clear", (Method)image_clear, 0);
   rb_define_method(image_class, "set_xmp_packet", (Method)image_set_xmp_packet, 1);
+  rb_define_method(image_class, "set_icc_profile", (Method)image_set_icc_profile, 1);
+  rb_define_method(image_class, "clear_icc_profile", (Method)image_clear_icc_profile, 0);
+  rb_define_method(image_class, "has_icc_profile?", (Method)image_has_icc_profile, 0);
 
   image_factory_class = rb_define_class_under(exiv2_module, "ImageFactory", rb_cObject);
   rb_define_singleton_method(image_factory_class, "open", (Method)image_factory_open, 1);
@@ -311,6 +317,42 @@ static VALUE image_set_xmp_packet(VALUE self, VALUE xmp_packet) {
 
   return Qtrue;
 }
+
+static VALUE image_set_icc_profile(VALUE self, VALUE icc_path) {
+  Exiv2::Image* image;
+  Data_Get_Struct(self, Exiv2::Image, image);
+
+  try {
+    Exiv2::DataBuf icc_profile = Exiv2::readFile(to_std_string(icc_path));
+    image->clearIccProfile();
+    image->setIccProfile(icc_profile);
+  }
+  catch (Exiv2::BasicError<char> error) {
+    rb_raise(basic_error_class, "%s", error.what());
+  }
+
+  return Qtrue;
+}
+
+static VALUE image_has_icc_profile(VALUE self) {
+  Exiv2::Image* image;
+  Data_Get_Struct(self, Exiv2::Image, image);
+
+  if (image->iccProfileDefined())
+    return Qtrue;
+  else
+    return Qfalse;
+}
+
+static VALUE image_clear_icc_profile(VALUE self) {
+  Exiv2::Image* image;
+  Data_Get_Struct(self, Exiv2::Image, image);
+
+  image->clearIccProfile();
+
+  return Qtrue;
+}
+
 
 // Exiv2::ImageFactory methods
 
