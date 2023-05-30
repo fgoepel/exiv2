@@ -91,7 +91,8 @@ static VALUE metadata_each(VALUE self, const rb_encoding *encoding = UTF_8) {
         if (n == 1 && first->first == "x-default") {
           value = to_ruby_string(first->second, encoding);
         } else {
-          value = rb_hash_new_capa(n);
+          /* value = rb_hash_new_capa(n); */
+          value = rb_hash_new();
 
           for (Exiv2::LangAltValue::ValueType::iterator itv = values.begin(); itv != values.end(); itv++) {
             VALUE lang = to_ruby_string(itv->first, encoding);
